@@ -130,9 +130,13 @@ Singleton {
     }
 
     // Probe credentials file to decide whether to start polling at all.
+    // watchChanges lets us pick up `login.py` running for the first time
+    // without needing a quickshell restart.
     FileView {
         id: credsProbe
         path: Qt.resolvedUrl(root.credentialsPath)
+        watchChanges: true
+        onFileChanged: credsProbe.reload()
         onLoaded: {
             console.log("[GCal] credentials present, scheduling sync")
             stateFile.reload()
