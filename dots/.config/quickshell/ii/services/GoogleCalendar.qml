@@ -33,6 +33,7 @@ Singleton {
     readonly property string statePath: FileUtils.trimFileProtocol(`${Directories.state}/user/gcal_events.json`)
     readonly property string credentialsPath: FileUtils.trimFileProtocol(`${Directories.config}/quickshell-gcal/credentials.json`)
     readonly property string syncScript: FileUtils.trimFileProtocol(`${Directories.home}/Projects/end4-staging/dots-hyprland/personal/gcal/sync.py`)
+    readonly property string addScript: FileUtils.trimFileProtocol(`${Directories.home}/Projects/end4-staging/dots-hyprland/personal/gcal/add.py`)
 
     property var events: []
     property var calendars: []
@@ -88,6 +89,26 @@ Singleton {
         syncProc.running = true
     }
 
+    // Adds a single all-day event to the primary calendar covering `dateObj`'s
+    // local day. Triggers a refresh on success so the new event shows up
+    // immediately. Pre-V2 (timed events / calendar picker) — see TODO.
+    function addAllDayEvent(summary, dateObj) {
+        if (!summary || !dateObj) return
+        const ymd = function(d) {
+            const p = function(n) { return n < 10 ? "0" + n : "" + n }
+            return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate())
+        }
+        const next = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate() + 1)
+        const body = {
+            summary: summary,
+            start: { date: ymd(dateObj) },
+            end: { date: ymd(next) },  // end.date is exclusive for all-day events
+        }
+        addProc.environment.GCAL_ADD_BODY = JSON.stringify(body)
+        addProc.command = ["python3", root.addScript]
+        addProc.running = true
+    }
+
     Process {
         id: syncProc
         running: false
@@ -101,6 +122,19 @@ Singleton {
             } else {
                 root.lastError = "sync.py exit " + exitCode
             }
+        }
+    }
+
+    Process {
+        id: addProc
+        running: false
+        stdout: SplitParser { onRead: (line) => console.log("[GCal/add]", line) }
+        stderr: SplitParser { onRead: (line) => console.warn("[GCal/add]", line) }
+        onExited: (exitCode, _) => {
+            // Re-sync regardless of outcome so a partial failure still pulls
+            // any successful side effects, and a success refreshes the cache
+            // immediately rather than waiting for the 5-min timer.
+            root.refresh()
         }
     }
 

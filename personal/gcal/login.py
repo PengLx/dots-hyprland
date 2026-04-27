@@ -25,7 +25,15 @@ from pathlib import Path
 CONFIG_DIR = Path.home() / ".config" / "quickshell-gcal"
 CLIENT_FILE = CONFIG_DIR / "oauth_client.json"
 CREDS_FILE = CONFIG_DIR / "credentials.json"
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+# Two narrow scopes instead of full `calendar`:
+#   - calendar.events          — read/write events on calendars the user owns
+#   - calendar.calendarlist.readonly — list the user's subscribed calendars
+#                                      (sync.py iterates calendarList; events
+#                                       scope alone doesn't grant that read).
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+]
 
 
 def pick_free_port() -> int:
@@ -150,6 +158,14 @@ def main():
     CREDS_FILE.write_text(json.dumps(creds, indent=2))
     os.chmod(CREDS_FILE, 0o600)
     print(f"Saved credentials to {CREDS_FILE} (mode 600).")
+
+    # Drop the cached access token so the next sync.py / add.py run mints a
+    # fresh one with the (possibly upgraded) scopes.
+    cache = CONFIG_DIR / ".access_token.json"
+    if cache.exists():
+        cache.unlink()
+        print(f"Cleared {cache.name}; next sync uses the new credentials.")
+
     print("Now run sync.py to fetch events, or wait for the quickshell scheduler.")
 
 
