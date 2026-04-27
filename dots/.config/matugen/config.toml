@@ -32,3 +32,8 @@ output_path = '~/.local/state/quickshell/user/generated/color.txt'
 [templates.wallpaper]
 input_path = '~/.config/matugen/templates/wallpaper.txt'
 output_path = '~/.local/state/quickshell/user/generated/wallpaper/path.txt'
+
+[templates.fcitx5]
+input_path = '~/.config/matugen/templates/fcitx5/theme.conf'
+output_path = '~/.local/share/fcitx5/themes/fairy/theme.conf'
+post_hook = 'kill -HUP $(pidof fcitx5) 2>/dev/null || true'

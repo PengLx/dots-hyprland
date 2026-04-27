@@ -1,17 +1,21 @@
-/diagnose.result
-/cache
+# Secrets — never commit
+**/todoist_token
+**/.env
+**/*.env
+**/fairy-mcp.runtime.json
+personal/.config/claude-tts/
+personal/.config/obsidian-mcp/
 
-# Ignore Python cache files
+# Build/state artefacts
+*.bak
+*.bak.*
+*.old.*
+*.new
+node_modules/
 __pycache__/
-*.py[cod]
 
-/dots/.config/quickshell/ii/.qmlls.ini
+# end4 setup runtime cache
+cache/
 
-# exp-update
-/.update-lock
-
-# custom os-release
-/os-release
-
-# Emacs auto backup file
-*~
+# translate-keybinds.sh backups
+*.conf.bak-*
