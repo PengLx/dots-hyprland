@@ -116,10 +116,17 @@ def list_message_ids(token: str) -> list[str]:
 def fetch_message_metadata(token: str, msg_id: str) -> dict:
     """Fetch a message's headers + snippet (no full body — saves quota and
     keeps the prompt small)."""
-    params = urllib.parse.urlencode({
-        "format": "metadata",
-        "metadataHeaders": "From,Subject,Date,To",
-    })
+    # metadataHeaders is a repeated query param in Gmail's API, not
+    # comma-separated. Pass tuples so urlencode emits one entry each.
+    params = urllib.parse.urlencode(
+        [
+            ("format", "metadata"),
+            ("metadataHeaders", "From"),
+            ("metadataHeaders", "To"),
+            ("metadataHeaders", "Subject"),
+            ("metadataHeaders", "Date"),
+        ]
+    )
     url = f"{API}/users/me/messages/{msg_id}?{params}"
     return http_get(url, token)
 

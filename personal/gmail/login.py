@@ -30,11 +30,14 @@ CLIENT_FILE_CANDIDATES = [
 ]
 CREDS_FILE = CONFIG_DIR / "credentials.json"
 
-# gmail.readonly is enough for the watcher (subject/snippet/from/date) and
-# the future sidebar's read view. If you ever want to mark-as-read or
-# archive from the sidebar, swap to gmail.modify and re-run login.py.
+# gmail.modify covers the watcher's read-only needs PLUS the sidebar's
+# write actions (mark-as-read, archive). It does NOT permit sending
+# email — that requires gmail.compose / gmail.send, which we don't want.
+# If you previously logged in with gmail.readonly, re-run this script
+# to upgrade the scope (Google revokes the readonly token automatically
+# when consent for the new scope set is granted).
 SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
 ]
 
 
