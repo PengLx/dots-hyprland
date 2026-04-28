@@ -30,6 +30,8 @@ Singleton {
     property bool superReleaseMightTrigger: true
     property bool wallpaperSelectorOpen: false
     property bool workspaceShowNumbers: false
+    property bool imageLightboxOpen: false
+    property var imageLightboxData: null  // { url, fallbackUrl?, tags?, source?, fileLink? }
 
     onSidebarRightOpenChanged: {
         if (GlobalStates.sidebarRightOpen) {

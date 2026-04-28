@@ -86,7 +86,10 @@ Scope { // Scope
         
         sourceComponent: PanelWindow { // Window
             id: panelWindow
-            visible: GlobalStates.sidebarLeftOpen
+            // Hide while the fullscreen image lightbox is up so the layer-shell
+            // surfaces don't fight over hover/focus (causes flicker on the
+            // image area). Sidebar reappears as soon as lightbox closes.
+            visible: GlobalStates.sidebarLeftOpen && !GlobalStates.imageLightboxOpen
             
             property bool extend: false
             property real sidebarWidth: panelWindow.extend ? Appearance.sizes.sidebarWidthExtended : Appearance.sizes.sidebarWidth
