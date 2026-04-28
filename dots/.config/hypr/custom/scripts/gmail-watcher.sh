@@ -27,7 +27,7 @@ backoff=5
 while true; do
     {
         echo "---- $(date '+%F %T') starting watcher ----"
-        python3 "$WATCHER"
+        python3 -u "$WATCHER"
         ec=$?
         echo "---- $(date '+%F %T') watcher exited with $ec, sleeping ${backoff}s ----"
     } >>"$LOG_FILE" 2>&1
