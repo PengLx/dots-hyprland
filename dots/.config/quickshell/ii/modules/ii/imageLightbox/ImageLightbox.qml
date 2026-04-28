@@ -40,11 +40,12 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "quickshell:imageLightbox"
             WlrLayershell.layer: WlrLayer.Overlay
-            // Exclusive keyboard so Esc fires reliably without a click first.
-            // Intentionally NOT registered with GlobalFocusGrab — that grabs
-            // all dismissables together, so dismissing the lightbox would
-            // also close the sidebar that opened it.
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            // OnDemand acts as Exclusive on Hyprland 0.49+, so Esc reaches
+            // Keys.onPressed without needing a prior click. We deliberately
+            // do NOT register with GlobalFocusGrab — that lumps all
+            // dismissables together so closing the lightbox would cascade
+            // into the sidebar, which we don't want.
+            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
             color: "transparent"
 
             anchors {
@@ -242,6 +243,10 @@ Scope {
                                     }
                                     imageContainer.showShareMenu = false
                                     GlobalStates.imageLightboxOpen = false
+                                    // Also dismiss the sidebar — the user is moving to Telegram.
+                                    // Without this, the sidebar's focus grab eats the first
+                                    // click on the Telegram window.
+                                    GlobalStates.sidebarLeftOpen = false
                                 }
                             }
                         }
