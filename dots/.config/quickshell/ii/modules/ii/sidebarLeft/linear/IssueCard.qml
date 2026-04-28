@@ -23,6 +23,7 @@ Rectangle {
     signal stateMenuRequested(var issue, real x, real y)
 
     Layout.fillWidth: true
+    width: ListView.view ? ListView.view.width : (parent ? parent.width : implicitWidth)
     implicitHeight: contentColumn.implicitHeight + 16
     radius: Appearance.rounding.small
     color: hovered ? Appearance.colors.colLayer2Hover : Appearance.colors.colLayer2
@@ -129,10 +130,10 @@ Rectangle {
             Item { Layout.fillWidth: true }
 
             StyledText {
-                visible: card.issue.cycle && card.issue.cycle.number
+                visible: !!(card.issue.cycle && card.issue.cycle.number)
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 color: Appearance.colors.colSubtext
-                text: card.issue.cycle ? ("Cycle " + card.issue.cycle.number) : ""
+                text: visible ? ("Cycle " + card.issue.cycle.number) : ""
             }
         }
 
@@ -151,19 +152,19 @@ Rectangle {
         RowLayout {
             Layout.fillWidth: true
             visible: !card.compact && (
-                (card.issue.project && card.issue.project.id) ||
-                card.issue.due_date ||
+                !!(card.issue.project && card.issue.project.id) ||
+                !!card.issue.due_date ||
                 (card.issue.labels && card.issue.labels.length > 0)
             )
             spacing: 6
 
             Rectangle {
-                visible: card.issue.project && card.issue.project.id
+                visible: !!(card.issue.project && card.issue.project.id)
                 width: 8; height: 8; radius: 4
                 color: (card.issue.project && card.issue.project.color) || "#888"
             }
             StyledText {
-                visible: card.issue.project && card.issue.project.id
+                visible: !!(card.issue.project && card.issue.project.id)
                 font.pixelSize: Appearance.font.pixelSize.smaller
                 color: Appearance.colors.colSubtext
                 elide: Text.ElideRight
@@ -171,10 +172,7 @@ Rectangle {
                 text: (card.issue.project && card.issue.project.name) || ""
             }
 
-            Item {
-                Layout.fillWidth: true
-                visible: (card.issue.project && card.issue.project.id) && (card.issue.due_date || (card.issue.labels && card.issue.labels.length > 0))
-            }
+            Item { Layout.fillWidth: true }
 
             MaterialSymbol {
                 visible: !!card.issue.due_date
@@ -188,8 +186,6 @@ Rectangle {
                 color: card._isOverdue(card.issue.due_date) ? "#FF5252" : Appearance.colors.colSubtext
                 text: card._formatDue(card.issue.due_date)
             }
-
-            Item { Layout.fillWidth: !((card.issue.project && card.issue.project.id) || card.issue.due_date) }
 
             // Up to 3 label dots
             Repeater {

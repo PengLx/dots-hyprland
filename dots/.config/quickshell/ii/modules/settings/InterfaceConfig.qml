@@ -3,9 +3,19 @@ import QtQuick.Layouts
 import qs.services
 import qs.modules.common
 import qs.modules.common.widgets
+import qs.modules.common.functions
+import Quickshell
 
 ContentPage {
+    id: interfaceConfigPage
     forceWidth: true
+
+    function _runLinearKeyDialog() {
+        Quickshell.execDetached([
+            "bash", "-c",
+            FileUtils.trimFileProtocol(`${Directories.home}/Projects/end4-staging/dots-hyprland/personal/linear/save-key.sh`)
+        ])
+    }
 
     ContentSection {
         icon: "keyboard"
@@ -459,6 +469,24 @@ ContentPage {
             checked: Config.options.sidebar.translator.enable
             onCheckedChanged: {
                 Config.options.sidebar.translator.enable = checked;
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "task_alt"
+            text: '启用 Linear'
+            checked: Config.options.policies.linear !== 0
+            onCheckedChanged: {
+                const wasEnabled = Config.options.policies.linear !== 0
+                Config.options.policies.linear = checked ? 1 : 0
+                // When turning ON for the first time without a saved key,
+                // pop up the kdialog password prompt to capture it.
+                if (checked && !wasEnabled && !Linear.credentialsPresent) {
+                    interfaceConfigPage._runLinearKeyDialog()
+                }
+            }
+            StyledToolTip {
+                text: '在左侧栏添加 Linear tab(Inbox / Cycle / Projects / Activity + 创建 issue + 改状态)。\n首次启用会弹窗输入 Linear Personal API Key。'
             }
         }
 

@@ -146,7 +146,35 @@ Item {
                     wrapMode: Text.WordWrap
                     color: Appearance.colors.colSubtext
                     font.pixelSize: Appearance.font.pixelSize.smaller
-                    text: "在 Linear 网页端 Settings → API → Personal API keys 创建一个,然后写入:\n~/.config/quickshell-linear/api_key"
+                    text: "在 Linear 网页端 Settings → API → Personal API keys 创建一个 PAT"
+                }
+                RippleButton {
+                    Layout.alignment: Qt.AlignHCenter
+                    implicitHeight: 36
+                    buttonRadius: Appearance.rounding.small
+                    colBackground: Appearance.colors.colPrimary
+                    contentItem: RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 6
+                        MaterialSymbol {
+                            iconSize: 16
+                            text: "key"
+                            color: Appearance.m3colors.m3onPrimary
+                        }
+                        StyledText {
+                            font.pixelSize: Appearance.font.pixelSize.normal
+                            color: Appearance.m3colors.m3onPrimary
+                            text: "提供 API Key"
+                        }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Quickshell.execDetached([
+                            "bash", "-c",
+                            FileUtils.trimFileProtocol(`${Directories.home}/Projects/end4-staging/dots-hyprland/personal/linear/save-key.sh`)
+                        ])
+                    }
                 }
             }
 

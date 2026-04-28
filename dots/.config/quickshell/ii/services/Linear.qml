@@ -189,6 +189,16 @@ Singleton {
         keyProbe.reload()
     }
 
+    // Fallback poller: FileView's watchChanges can miss file *creation*
+    // for the first-time setup (api_key didn't exist when the FileView was
+    // wired up). Re-probe every 10s until we detect the key, then stop.
+    Timer {
+        interval: 10 * 1000
+        running: !root.credentialsPresent
+        repeat: true
+        onTriggered: keyProbe.reload()
+    }
+
     Timer {
         interval: 5 * 60 * 1000
         running: root.credentialsPresent && root.syncedAt.length > 0
