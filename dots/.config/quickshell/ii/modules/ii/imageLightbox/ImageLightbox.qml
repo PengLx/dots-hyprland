@@ -82,13 +82,22 @@ Scope {
                 }
             }
 
-            // Esc / arrow keys
+            // Esc / +-0 / arrows
             Item {
                 anchors.fill: parent
                 focus: true
                 Keys.onPressed: (event) => {
                     if (event.key === Qt.Key_Escape) {
                         GlobalStates.imageLightboxOpen = false
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Plus || event.key === Qt.Key_Equal) {
+                        imageContainer.zoomAt(imageContainer.width/2, imageContainer.height/2, 1.25)
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_Minus) {
+                        imageContainer.zoomAt(imageContainer.width/2, imageContainer.height/2, 1/1.25)
+                        event.accepted = true
+                    } else if (event.key === Qt.Key_0) {
+                        imageContainer.resetZoom()
                         event.accepted = true
                     }
                 }
@@ -101,46 +110,185 @@ Scope {
                 width: parent.width * 0.9
                 height: parent.height * 0.9
                 opacity: GlobalStates.imageLightboxOpen ? 1 : 0
-                scale: GlobalStates.imageLightboxOpen ? 1.0 : 0.96
+                // Note: not animating Item.scale here — we use that property
+                // for zoom now. Open/close is just opacity.
                 Behavior on opacity {
                     NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
                 }
-                Behavior on scale {
-                    NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+
+                // Zoom + pan state
+                property real zoom: 1.0
+                property real panX: 0
+                property real panY: 0
+                readonly property real minZoom: 0.5
+                readonly property real maxZoom: 8.0
+
+                function resetZoom() {
+                    zoom = 1.0
+                    panX = 0
+                    panY = 0
                 }
 
-                // Block backdrop clicks from bubbling
-                MouseArea { anchors.fill: parent; onClicked: {} }
-
-                // Low-res placeholder (instant)
-                Image {
-                    id: placeholderImage
-                    anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    source: GlobalStates.imageLightboxData?.fallbackUrl ?? ""
-                    visible: hiResImage.status !== Image.Ready
-                    smooth: true
-                    asynchronous: true
-                    sourceSize.width: width
-                    sourceSize.height: height
+                // Mouse-anchored zoom: keep the logical pixel under the
+                // cursor at the same viewport point after the zoom change.
+                function zoomAt(localX, localY, factor) {
+                    const oldZoom = zoom
+                    const newZoom = Math.max(minZoom, Math.min(maxZoom, oldZoom * factor))
+                    if (newZoom === oldZoom) return
+                    const cx = width / 2 + panX
+                    const cy = height / 2 + panY
+                    const ratio = 1 - newZoom / oldZoom
+                    panX += (localX - cx) * ratio
+                    panY += (localY - cy) * ratio
+                    zoom = newZoom
                 }
 
-                // Hi-res target image
-                Image {
-                    id: hiResImage
+                Behavior on zoom { NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+                Behavior on panX { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
+                Behavior on panY { NumberAnimation { duration: 80; easing.type: Easing.OutCubic } }
+
+                // Reset zoom whenever a new image is shown.
+                Connections {
+                    target: GlobalStates
+                    function onImageLightboxDataChanged() { imageContainer.resetZoom() }
+                    function onImageLightboxOpenChanged() {
+                        if (GlobalStates.imageLightboxOpen) imageContainer.resetZoom()
+                    }
+                }
+
+                // Zoom/pan area — clips so the zoomed image stays inside the
+                // 90% container, doesn't bleed onto the backdrop.
+                Item {
+                    id: zoomArea
                     anchors.fill: parent
-                    fillMode: Image.PreserveAspectFit
-                    source: GlobalStates.imageLightboxData?.url ?? ""
-                    smooth: true
-                    mipmap: true
-                    asynchronous: true
-                    cache: true
-                    // Decode to a generous size so zooming/HiDPI stays sharp
-                    sourceSize.width: panelWindow.width
-                    sourceSize.height: panelWindow.height
-                    opacity: status === Image.Ready ? 1 : 0
-                    Behavior on opacity {
-                        NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                    clip: true
+
+                    Image {
+                        id: placeholderImage
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: GlobalStates.imageLightboxData?.fallbackUrl ?? ""
+                        visible: hiResImage.status !== Image.Ready
+                        smooth: true
+                        asynchronous: true
+                        sourceSize.width: width
+                        sourceSize.height: height
+                        transform: [
+                            Scale {
+                                origin.x: placeholderImage.width / 2
+                                origin.y: placeholderImage.height / 2
+                                xScale: imageContainer.zoom
+                                yScale: imageContainer.zoom
+                            },
+                            Translate { x: imageContainer.panX; y: imageContainer.panY }
+                        ]
+                    }
+
+                    Image {
+                        id: hiResImage
+                        anchors.fill: parent
+                        fillMode: Image.PreserveAspectFit
+                        source: GlobalStates.imageLightboxData?.url ?? ""
+                        smooth: true
+                        mipmap: true
+                        asynchronous: true
+                        cache: true
+                        // Don't cap sourceSize — let the image decode at full
+                        // resolution so zoomed-in pixels stay crisp. Memory
+                        // cost is one image's full decode (~10-60MB for
+                        // typical anime). Worth it for the use case.
+                        opacity: status === Image.Ready ? 1 : 0
+                        Behavior on opacity {
+                            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                        }
+                        transform: [
+                            Scale {
+                                origin.x: hiResImage.width / 2
+                                origin.y: hiResImage.height / 2
+                                xScale: imageContainer.zoom
+                                yScale: imageContainer.zoom
+                            },
+                            Translate { x: imageContainer.panX; y: imageContainer.panY }
+                        ]
+                    }
+
+                    MouseArea {
+                        id: zoomMouseArea
+                        anchors.fill: parent
+                        property real lastX: 0
+                        property real lastY: 0
+                        property bool dragging: false
+
+                        cursorShape: imageContainer.zoom > 1.001
+                            ? (pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor)
+                            : Qt.ArrowCursor
+
+                        onPressed: function(mouse) {
+                            if (imageContainer.zoom > 1.001) {
+                                lastX = mouse.x; lastY = mouse.y
+                                dragging = true
+                                mouse.accepted = true
+                            }
+                        }
+                        onReleased: dragging = false
+                        onPositionChanged: function(mouse) {
+                            if (dragging) {
+                                imageContainer.panX += mouse.x - lastX
+                                imageContainer.panY += mouse.y - lastY
+                                lastX = mouse.x; lastY = mouse.y
+                            }
+                        }
+                        onDoubleClicked: imageContainer.resetZoom()
+                        onWheel: function(wheel) {
+                            const factor = wheel.angleDelta.y > 0 ? 1.18 : 1 / 1.18
+                            imageContainer.zoomAt(wheel.x, wheel.y, factor)
+                            wheel.accepted = true
+                        }
+                    }
+                }
+
+                // Zoom indicator + reset (top-left, shown only when zoomed)
+                Rectangle {
+                    z: 10
+                    visible: Math.abs(imageContainer.zoom - 1.0) > 0.01
+                    anchors {
+                        top: parent.top
+                        left: parent.left
+                        margins: 12
+                    }
+                    radius: Appearance.rounding.small
+                    color: "#80000000"
+                    implicitWidth: zoomBadgeRow.implicitWidth + 12
+                    implicitHeight: 32
+
+                    RowLayout {
+                        id: zoomBadgeRow
+                        anchors.centerIn: parent
+                        spacing: 6
+
+                        StyledText {
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            color: "white"
+                            text: Math.round(imageContainer.zoom * 100) + "%"
+                        }
+                        RippleButton {
+                            implicitWidth: 24
+                            implicitHeight: 24
+                            buttonRadius: Appearance.rounding.small
+                            colBackground: "transparent"
+                            contentItem: MaterialSymbol {
+                                anchors.centerIn: parent
+                                iconSize: 14
+                                text: "fit_screen"
+                                color: "white"
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: imageContainer.resetZoom()
+                            }
+                            StyledToolTip { text: "重置缩放 (0)" }
+                        }
                     }
                 }
 
