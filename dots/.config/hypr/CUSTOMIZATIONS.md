@@ -149,6 +149,30 @@
 
 ---
 
+## Linear 侧栏 tab
+
+- **入口**: 左侧栏 (`Super+A`) 的「Linear」tab(图标 task_alt)
+- **子视图**: Inbox / Cycle / Projects / Activity
+- **写操作**: 浮动「+」按钮 → 创建 issue;Issue 卡片右键 → 改状态
+- **快捷键**: `N` 新建 issue,`Esc` 关闭对话框,`Ctrl+R` 强制刷新
+- **API key 文件**: `~/.config/quickshell-linear/api_key`(纯文本 PAT,600 权限)
+- **首次设置**:
+  ```sh
+  mkdir -p ~/.config/quickshell-linear && chmod 700 ~/.config/quickshell-linear
+  printf '%s' 'lin_api_xxx' > ~/.config/quickshell-linear/api_key
+  chmod 600 ~/.config/quickshell-linear/api_key
+  python3 ~/Projects/end4-staging/dots-hyprland/personal/linear/sync.py  # smoke test
+  ```
+- **同步频率**: 每 5 分钟 + quickshell 启动时一次 + 每次写操作后一次
+- **缓存路径**: `~/.local/state/quickshell/user/linear_data.json`
+- **关掉**: Config.options.policies.linear = 0
+- **后端脚本**:
+  - `personal/linear/sync.py` — 拉数据(viewer + teams + assigned + cycle issues + projects + notifications)
+  - `personal/linear/mutate.py` — `LINEAR_OP=create` / `set_state` 走 GraphQL
+- ⚠️ **end4 升级警告**: `LinearTab.qml` / `SidebarLeftContent.qml` / `Config.qml` 都在 end4 更新区,`setup exp-update` 会还原。`personal/linear/` 是我们自己加的目录,不会被动。
+
+---
+
 ## 备份位置
 
 - **配置整包备份**: `~/Backup/desktop-cleanup-2026-04-27.tar.gz`(end4 安装前的旧 mac 风格 + niri config)
@@ -167,4 +191,4 @@
 
 ---
 
-*末次编辑: 2026-04-29*
+*末次编辑: 2026-04-29(Linear tab 接入)*
