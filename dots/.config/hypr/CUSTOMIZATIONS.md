@@ -173,6 +173,26 @@
 
 ---
 
+## Gmail AI triage(后台 watcher)
+
+- **入口**: 没有 sidebar,纯后台 daemon。新邮件 → AI 判断 → 桌面通知(含验证码自动复制)
+- **设置文件**:
+  - `~/.config/quickshell-gmail/oauth_client.json`(可 symlink 到 gcal 的同名文件)
+  - `~/.config/quickshell-gmail/credentials.json`(login.py 生成)
+  - `~/.config/quickshell-gmail/notify-rules.md`(用户偏好,改完即时生效)
+- **启动**: `~/.config/hypr/custom/scripts/gmail-watcher.sh`(已加到 `custom/execs.conf` 的 `exec-once`)
+- **日志**: `~/.cache/quickshell-gmail/watcher.log`
+- **AI 决策**: 每封新邮件用 `claude -p --bare --model claude-haiku-4-5` 调 `gmail-triage` MCP,Claude 决定要不要 call `notify_user(title, body, code_to_copy)` 工具
+- **MCP 入口**: `personal/gmail/triage-mcp.py`(FastMCP + uvx PEP 723 inline deps)
+- **轮询频率**: 30s,window 是 `is:unread newer_than:10m`,seen-ID 去重防重复通知
+- **首次 setup**: 见 `personal/gmail/README.md`
+- **临时关掉**: `pkill -f gmail-watcher.sh`
+- **改规则**: 编辑 `~/.config/quickshell-gmail/notify-rules.md`,下一封邮件就生效
+- **手动测试**: 见 README 的「调试」段
+- ⚠️ **隐私提醒**: 每封新邮件的 from/subject/snippet 都会通过 claude -p 发到 Anthropic API。如果不想要,删 watcher 的 exec-once 这一条。
+
+---
+
 ## 备份位置
 
 - **配置整包备份**: `~/Backup/desktop-cleanup-2026-04-27.tar.gz`(end4 安装前的旧 mac 风格 + niri config)
@@ -191,4 +211,4 @@
 
 ---
 
-*末次编辑: 2026-04-29(Linear tab 接入)*
+*末次编辑: 2026-04-29(Linear tab 接入 + Gmail AI triage watcher)*
