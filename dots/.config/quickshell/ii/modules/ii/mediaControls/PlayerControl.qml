@@ -67,7 +67,7 @@ Item { // Player instance
     readonly property bool _useCiderRpc:
         (root.player?.identity === "Cider") && Cider.connected
     readonly property real displayPosition:
-        _useCiderRpc ? (Cider.nowPlaying.currentPlaybackTime ?? 0)
+        _useCiderRpc ? (Cider.smoothPosition ?? 0)
                      : (root.player?.position ?? 0)
     readonly property real displayLength:
         _useCiderRpc ? ((Cider.nowPlaying.durationInMillis ?? 0) / 1000)
