@@ -1,0 +1,17 @@
+patch:
+  __include: rime_ice_suggestion:/     # 加载雾凇推荐配置
+  menu/page_size: 9                    # 候选词显示9个，更舒服
+
+  # 如果你只想保留雾凇一个方案（强烈推荐），加上这几行：
+  schema_list:
+    - schema: rime_ice
+
+  # Caps Lock / Shift 行为修复:
+  # good_old_caps_lock 默认 true 会让 OS 级 Caps Lock 状态跟 Rime 模式
+  # 解耦 —— 经常出现"切到大写后切不回来"是因为 OS 那层还亮着。
+  # 改成 false 后 Caps Lock 仅作 Rime 模式切换键,不影响系统大小写。
+  ascii_composer/good_old_caps_lock: false
+  ascii_composer/switch_key/Caps_Lock: commit_code
+  ascii_composer/switch_key/Shift_L: commit_code
+  ascii_composer/switch_key/Shift_R: noop
+  

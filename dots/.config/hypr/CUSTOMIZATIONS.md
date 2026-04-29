@@ -193,6 +193,22 @@
 
 ---
 
+## 雾凇拼音 Caps/Shift 修复
+
+- **症状**: Shift+字母 或 Caps Lock 进入英文/大写后,Rime 端切回中文了,但 OS 那层 Caps Lock 还亮着,后续输入还是大写。
+- **改文件**: `~/.local/share/fcitx5/rime/default.custom.yaml`(参考拷贝在 fork 的 `personal/rime/default.custom.yaml`)
+- **加的 patch**:
+  ```yaml
+  ascii_composer/good_old_caps_lock: false      # OS Caps Lock 与 Rime 模式解耦
+  ascii_composer/switch_key/Caps_Lock: commit_code
+  ascii_composer/switch_key/Shift_L: commit_code
+  ascii_composer/switch_key/Shift_R: noop
+  ```
+- **改完生效**: fcitx5 托盘 → 雾凇拼音 → 重新部署(单跑 `fcitx5-remote -r` 不够,部署是 Rime 自己的步骤)
+- ⚠️ 这个文件不在 fcitx5 主配置目录(`~/.config/fcitx5/`),而在 rime 用户目录(`~/.local/share/fcitx5/rime/`)
+
+---
+
 ## 备份位置
 
 - **配置整包备份**: `~/Backup/desktop-cleanup-2026-04-27.tar.gz`(end4 安装前的旧 mac 风格 + niri config)
@@ -211,4 +227,4 @@
 
 ---
 
-*末次编辑: 2026-04-29(Linear tab 接入 + Gmail AI triage watcher)*
+*末次编辑: 2026-04-29(雾凇拼音 Caps/Shift 修复)*
