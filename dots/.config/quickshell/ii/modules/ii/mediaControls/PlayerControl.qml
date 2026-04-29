@@ -59,6 +59,20 @@ Item { // Player instance
         }
     }
 
+    // Cider is Electron and lies through MPRIS (fake length, session-
+    // relative position counter). When it's the active player and our
+    // local RPC bridge is connected, override position/length with
+    // Cider's real /api/v1/playback/now-playing values. See
+    // services/Cider.qml + personal/cider/README.md.
+    readonly property bool _useCiderRpc:
+        (root.player?.identity === "Cider") && Cider.connected
+    readonly property real displayPosition:
+        _useCiderRpc ? (Cider.nowPlaying.currentPlaybackTime ?? 0)
+                     : (root.player?.position ?? 0)
+    readonly property real displayLength:
+        _useCiderRpc ? ((Cider.nowPlaying.durationInMillis ?? 0) / 1000)
+                     : (root.player?.length ?? 0)
+
     onArtFilePathChanged: {
         if (root.artUrl.length == 0) {
             root.artDominantColor = Appearance.m3colors.m3secondaryContainer
@@ -223,7 +237,7 @@ Item { // Player instance
                         font.pixelSize: Appearance.font.pixelSize.small
                         color: blendedColors.colSubtext
                         elide: Text.ElideRight
-                        text: `${StringUtils.friendlyTimeForSeconds(root.player?.position)} / ${StringUtils.friendlyTimeForSeconds(root.player?.length)}`
+                        text: `${StringUtils.friendlyTimeForSeconds(root.displayPosition)} / ${StringUtils.friendlyTimeForSeconds(root.displayLength)}`
                     }
                     RowLayout {
                         id: sliderRow
@@ -245,14 +259,21 @@ Item { // Player instance
                                 id: sliderLoader
                                 anchors.fill: parent
                                 active: root.player?.canSeek ?? false
-                                sourceComponent: StyledSlider { 
+                                sourceComponent: StyledSlider {
                                     configuration: StyledSlider.Configuration.Wavy
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
                                     handleColor: blendedColors.colPrimary
-                                    value: root.player?.position / root.player?.length
+                                    value: root.displayLength > 0 ? (root.displayPosition / root.displayLength) : 0
                                     onMoved: {
-                                        root.player.position = value * root.player.length;
+                                        const target = value * root.displayLength;
+                                        if (root._useCiderRpc) {
+                                            // Cider's MPRIS Position setter is unreliable too —
+                                            // route the seek through its HTTP API.
+                                            Cider.seek(target);
+                                        } else {
+                                            root.player.position = target;
+                                        }
                                     }
                                 }
                             }
@@ -265,11 +286,11 @@ Item { // Player instance
                                     right: parent.right
                                 }
                                 active: !(root.player?.canSeek ?? false)
-                                sourceComponent: StyledProgressBar { 
+                                sourceComponent: StyledProgressBar {
                                     wavy: root.player?.isPlaying
                                     highlightColor: blendedColors.colPrimary
                                     trackColor: blendedColors.colSecondaryContainer
-                                    value: root.player?.position / root.player?.length
+                                    value: root.displayLength > 0 ? (root.displayPosition / root.displayLength) : 0
                                 }
                             }
 
