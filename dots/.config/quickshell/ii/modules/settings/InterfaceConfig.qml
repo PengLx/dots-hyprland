@@ -17,6 +17,19 @@ ContentPage {
         ])
     }
 
+    function _runGmailLogin() {
+        // Spawn login.py in a kitty window so the user can see the auth
+        // URL fallback if the browser doesn't auto-open. Bash trailing
+        // `read` keeps the window up after success/failure.
+        const script = FileUtils.trimFileProtocol(
+            `${Directories.home}/Projects/end4-staging/dots-hyprland/personal/gmail/login.py`
+        )
+        Quickshell.execDetached([
+            "kitty", "--title", "Gmail 登录", "-e", "bash", "-c",
+            `python3 "${script}"; echo; echo '按回车关闭'; read`
+        ])
+    }
+
     ContentSection {
         icon: "keyboard"
         title: Translation.tr("Cheat sheet")
@@ -487,6 +500,24 @@ ContentPage {
             }
             StyledToolTip {
                 text: '在左侧栏添加 Linear tab(Inbox / Cycle / Projects / Activity + 创建 issue + 改状态)。\n首次启用会弹窗输入 Linear Personal API Key。'
+            }
+        }
+
+        ConfigSwitch {
+            buttonIcon: "mail"
+            text: '启用 Gmail'
+            checked: Config.options.policies.gmail !== 0
+            onCheckedChanged: {
+                const wasEnabled = Config.options.policies.gmail !== 0
+                Config.options.policies.gmail = checked ? 1 : 0
+                // First-time enable without OAuth → spawn login.py in a
+                // kitty window so the browser opens for consent.
+                if (checked && !wasEnabled && !Gmail.credentialsPresent) {
+                    interfaceConfigPage._runGmailLogin()
+                }
+            }
+            StyledToolTip {
+                text: '在左侧栏添加 Gmail tab(收件箱 + 邮件正文 + 标已读 / 归档),后台 watcher 会用 AI 判断是否值得弹通知(如验证码)。\n首次启用会弹出 kitty 终端运行 login.py 走 OAuth。'
             }
         }
 
