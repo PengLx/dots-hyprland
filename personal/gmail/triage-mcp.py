@@ -27,6 +27,7 @@ from mcp.server.fastmcp import FastMCP
 
 
 RULES_FILE = Path.home() / ".config" / "quickshell-gmail" / "notify-rules.md"
+ICON_FILE = Path(__file__).resolve().parent / "icon.svg"
 
 mcp = FastMCP("gmail-triage")
 
@@ -119,10 +120,13 @@ def notify_user(title: str, body: str, code_to_copy: str = "") -> str:
             # wl-copy missing — non-fatal, just lose the auto-copy.
             print("[triage-mcp] wl-copy not found; skipping clipboard step", file=sys.stderr)
 
+    # Branded Gmail icon (bundled SVG). Falls back to the freedesktop
+    # mail-message-new theme icon if the file is missing.
+    icon = str(ICON_FILE) if ICON_FILE.exists() else "mail-message-new"
     notify_args = [
         "notify-send",
         "-a", "Gmail",
-        "-i", "mail-message-new",
+        "-i", icon,
         "-u", "normal",
         title,
         body_final,
