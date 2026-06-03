@@ -15,8 +15,7 @@ if [ -f "$HYPR/hyprland.conf.old" ]; then
 fi
 
 echo
-echo "Reverted hypr to the .conf config. Restart Hyprland to apply:"
-echo "    hyprctl dispatch exit     # or log out / reboot"
+echo "Reverted hypr to the .conf config. Restart Hyprland to apply (log out / reboot)."
 echo
 echo "Full pre-migration backups (hypr + quickshell + matugen + fontconfig):"
 ls -d "$HOME/.config/_premigration-backup-"* 2>/dev/null || echo "  (none found)"
