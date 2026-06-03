@@ -32,6 +32,16 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 git -C "$FORK" archive "$BRANCH" dots/.config 2>/dev/null | tar -x -C "$TMP"
 SRC="$TMP/dots/.config"
 
+# git archive DROPS submodule contents (e.g. quickshell .../widgets/shapes) -> the
+# install ends up missing a module and quickshell black-screens. Copy submodule
+# working-tree contents from the fork into the export. (Bug found the hard way.)
+git -C "$FORK" config --file .gitmodules --get-regexp path 2>/dev/null | awk '{print $2}' | while read -r sm; do
+  [ -d "$FORK/$sm" ] || continue
+  dst="$SRC/${sm#dots/.config/}"
+  mkdir -p "$dst"
+  rsync -a --exclude='.git' "$FORK/$sm/" "$dst/"
+done
+
 # 3) Shell + theming: mirror branch over live (authoritative; runtime state lives elsewhere)
 echo "[3/7] quickshell / matugen / fontconfig"
 rsync -a --delete "$SRC/quickshell/" "$CFG/quickshell/"
