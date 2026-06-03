@@ -26,3 +26,11 @@ hl.bind("SUPER + equal",  hl.dsp.layout("colresize +conf"),              { descr
 hl.bind("SUPER + U",         hl.dsp.layout("consume_or_expel"),          { description = "滚动: 并入/弹出列" })
 hl.bind("SUPER + SHIFT + U", hl.dsp.layout("promote"),                   { description = "滚动: 独立成列" })
 hl.bind("SUPER + period", hl.dsp.layout("fit active"),                   { description = "滚动: 居中当前列" })
+
+-- 修复「Super+Alt+数字 一次按键移走两个窗口」:upstream 把发送到工作区同时绑了 keysym
+-- (1-0)和数字行 keycode(code:10-19),标准键盘上是同一批物理键 → 一次按键触发两次。
+-- 第一次移走焦点窗后焦点跳到下一个,第二次把它也移走。解绑重复的数字行 keycode 那套
+-- (keysym 已够用且带中文描述;小键盘 code:87-90 不冲突,保留)。
+for _, kc in ipairs({ 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 }) do
+    hl.unbind("SUPER + ALT + code:" .. kc)
+end
