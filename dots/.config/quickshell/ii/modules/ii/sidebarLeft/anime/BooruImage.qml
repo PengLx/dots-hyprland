@@ -1,3 +1,4 @@
+import qs
 import qs.services
 import qs.modules.common
 import qs.modules.common.functions
@@ -17,6 +18,23 @@ Button {
     property var imageData
     property var rowHeight
     property bool manualDownload: false
+
+    // Click anywhere on the image (except the menu button) to open the
+    // fullscreen lightbox with the high-res sample.
+    onClicked: {
+        const fullUrl = root.imageData.file_url ?? root.imageData.sample_url ?? root.imageData.preview_url
+        const sampleUrl = root.imageData.sample_url ?? fullUrl
+        GlobalStates.imageLightboxData = {
+            url: sampleUrl,                   // shown in the lightbox (medium-res, fast)
+            fallbackUrl: root.imageData.preview_url,
+            saveUrl: fullUrl,                 // saved to disk = highest available
+            shareUrl: fullUrl,                // shared link = highest available
+            tags: root.imageData.tags ?? "",
+            fileLink: fullUrl,                // "Open original" → same as fullUrl
+            referer: root.imageData.source ?? "",  // some boorus need referer to download
+        }
+        GlobalStates.imageLightboxOpen = true
+    }
     property string previewDownloadPath
     property string downloadPath
     property string nsfwPath
@@ -30,7 +48,9 @@ Button {
         id: imageDownloader
         running: root.manualDownload
         filePath: root.filePath
-        sourceUrl: root.imageData.preview_url ?? root.imageData.sample_url
+        // For manual-download providers (danbooru / waifu.im / t.alcy.cc) prefer
+        // sample_url so the cached file is high-res, not a 150px thumbnail.
+        sourceUrl: root.imageData.sample_url ?? root.imageData.preview_url
         onDone: (path, width, height) => {
             imageObject.source = ""
             imageObject.source = path
@@ -60,20 +80,53 @@ Button {
     contentItem: Item {
         anchors.fill: parent
 
-        StyledImage {
-            id: imageObject
+        // Progressive loading: a low-res preview shows instantly, then the
+        // higher-res sample fades in once it finishes downloading. Decode
+        // size is doubled to account for HiDPI fractional scaling (1.25x /
+        // 1.5x / 2x) so the rendered image stays sharp.
+        Item {
+            id: imageWrapper
             anchors.fill: parent
-            width: root.rowHeight * modelData.aspect_ratio
-            height: root.rowHeight
-            fillMode: Image.PreserveAspectFit
-            source: modelData.preview_url
-
             layer.enabled: true
             layer.effect: OpacityMask {
                 maskSource: Rectangle {
                     width: root.rowHeight * modelData.aspect_ratio
                     height: root.rowHeight
                     radius: imageRadius
+                }
+            }
+
+            StyledImage {
+                id: previewImage
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectFit
+                source: modelData.preview_url
+                sourceSize.width: root.rowHeight * modelData.aspect_ratio
+                sourceSize.height: root.rowHeight
+                smooth: true
+                asynchronous: true
+                visible: imageObject.status !== Image.Ready
+            }
+
+            StyledImage {
+                id: imageObject
+                anchors.fill: parent
+                width: root.rowHeight * modelData.aspect_ratio
+                height: root.rowHeight
+                fillMode: Image.PreserveAspectFit
+                source: modelData.sample_url ?? modelData.preview_url
+                // Decode at 2x logical size to stay crisp under HiDPI scaling.
+                sourceSize.width: root.rowHeight * modelData.aspect_ratio * 2
+                sourceSize.height: root.rowHeight * 2
+                smooth: true
+                mipmap: true
+                asynchronous: true
+                opacity: status === Image.Ready ? 1 : 0
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 220
+                        easing.type: Easing.OutCubic
+                    }
                 }
             }
         }

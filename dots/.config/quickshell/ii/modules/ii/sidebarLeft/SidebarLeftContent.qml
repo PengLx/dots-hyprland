@@ -16,9 +16,13 @@ Item {
     property bool translatorEnabled: Config.options.sidebar.translator.enable
     property bool animeEnabled: Config.options.policies.weeb !== 0
     property bool animeCloset: Config.options.policies.weeb === 2
+    property bool linearEnabled: Config.options.policies.linear !== 0
+    property bool gmailEnabled: Config.options.policies.gmail !== 0
     property var tabButtonList: [
         ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),
         ...(root.translatorEnabled ? [{"icon": "translate", "name": Translation.tr("Translator")}] : []),
+        ...(root.linearEnabled ? [{"icon": "task_alt", "name": "Linear"}] : []),
+        ...(root.gmailEnabled ? [{"icon": "mail", "name": "Gmail"}] : []),
         ...((root.animeEnabled && !root.animeCloset) ? [{"icon": "bookmark_heart", "name": Translation.tr("Anime")}] : [])
     ]
     property int tabCount: swipeView.count
@@ -86,7 +90,9 @@ Item {
                 contentChildren: [
                     ...(root.aiChatEnabled ? [aiChat.createObject()] : []),
                     ...(root.translatorEnabled ? [translator.createObject()] : []),
-                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
+                    ...(root.linearEnabled ? [linear.createObject()] : []),
+                    ...(root.gmailEnabled ? [gmail.createObject()] : []),
+                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && !root.linearEnabled && !root.gmailEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),
                     ...(root.animeEnabled ? [anime.createObject()] : []),
                 ]
             }
@@ -103,6 +109,14 @@ Item {
         Component {
             id: anime
             Anime {}
+        }
+        Component {
+            id: linear
+            LinearTab {}
+        }
+        Component {
+            id: gmail
+            GmailTab {}
         }
         Component {
             id: placeholder

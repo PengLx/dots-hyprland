@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gmail-triage": {
+      "command": "/home/lican/Projects/end4-staging/dots-hyprland/personal/gmail/triage-mcp.py",
+      "args": []
+    }
+  }
+}

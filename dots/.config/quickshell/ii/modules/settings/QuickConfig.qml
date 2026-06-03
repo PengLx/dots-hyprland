@@ -116,39 +116,33 @@ ContentPage {
                         text: Translation.tr("Random osu! seasonal background\nImage is saved to ~/Pictures/Wallpapers")
                     }
                 }
-                RippleButtonWithIcon {
+                RowLayout {
                     Layout.fillWidth: true
-                    materialIcon: "wallpaper"
-                    StyledToolTip {
-                        text: Translation.tr("Pick wallpaper image on your system")
+                    spacing: 5
+                    uniformCellSizes: true
+
+                    RippleButtonWithIcon {
+                        Layout.fillWidth: true
+                        buttonRadius: Appearance.rounding.small
+                        materialIcon: "wallpaper"
+                        mainText: "选择文件"
+                        StyledToolTip {
+                            text: "在文件系统中选择壁纸"
+                        }
+                        onClicked: {
+                            Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
+                        }
                     }
-                    onClicked: {
-                        Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
-                    }
-                    mainContentComponent: Component {
-                        RowLayout {
-                            spacing: 10
-                            StyledText {
-                                font.pixelSize: Appearance.font.pixelSize.small
-                                text: Translation.tr("Choose file")
-                                color: Appearance.colors.colOnSecondaryContainer
-                            }
-                            RowLayout {
-                                spacing: 3
-                                KeyboardKey {
-                                    key: "Ctrl"
-                                }
-                                KeyboardKey {
-                                    key: Config.options.cheatsheet.superKey ?? "󰖳"
-                                }
-                                StyledText {
-                                    Layout.alignment: Qt.AlignVCenter
-                                    text: "+"
-                                }
-                                KeyboardKey {
-                                    key: "T"
-                                }
-                            }
+                    RippleButtonWithIcon {
+                        Layout.fillWidth: true
+                        buttonRadius: Appearance.rounding.small
+                        materialIcon: "bookmark_add"
+                        mainText: "保存壁纸"
+                        onClicked: {
+                            Quickshell.execDetached([FileUtils.trimFileProtocol(`${Directories.config}/hypr/custom/scripts/save-current-wallpaper.sh`)]);
+                        }
+                        StyledToolTip {
+                            text: "复制当前壁纸到 ~/Pictures/Wallpapers/saved/(带时间戳)"
                         }
                     }
                 }

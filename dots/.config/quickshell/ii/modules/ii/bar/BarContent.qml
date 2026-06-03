@@ -338,6 +338,18 @@ Item { // Bar content region
                     WeatherBar {}
                 }
             }
+
+            // Synced lyrics — declared last so it sits leftmost in this
+            // RTL row, right next to the clock. Layout.fillWidth lets it
+            // soak up the spacer's flex space when lyrics are showing,
+            // and collapses to 0 when they aren't, keeping the rest of
+            // the right section anchored to where it always was.
+            BarLyrics {
+                visible: root.useShortenedForm < 2 && Lyrics.hasLyrics
+                Layout.fillWidth: false
+                Layout.alignment: Qt.AlignVCenter
+                Layout.leftMargin: 6
+            }
         }
     }
 }
